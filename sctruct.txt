@@ -1,0 +1,7 @@
+sctruct
+pode colocar
+embaralhar
+gerar completo(backtrack)
+criar desafio
+copiar_grid
+verificar_vitoria
