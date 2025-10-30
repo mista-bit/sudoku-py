@@ -2,7 +2,7 @@ import customtkinter as ctk
 import gen_sudoku as gsdk
 import game as gm
 
-diff = 0
+diff = 49  # dificuldade padrão
 
 def seletor_dificuldade(choice):
     global diff  
@@ -19,7 +19,7 @@ def seletor_dificuldade(choice):
             diff = 49
     print(diff)
 
-def iniciar_jogo():
+def iniciar_jogo(diff):
     tabuleiro = [[0 for _ in range(9)] for _ in range(9)]
     gsdk.gerar_completo(tabuleiro)
     solucao = [[0 for _ in range(9)] for _ in range(9)]
@@ -28,7 +28,9 @@ def iniciar_jogo():
     gsdk.criar_desafio(tabuleiro, diff)
     
     app.start.destroy()
-    gm.game_screen(tabuleiro, solucao)
+    gmapp = gm.game_screen(tabuleiro, solucao)
+    gmapp.game.mainloop()
+    
 
 
 class StartScreen():
@@ -84,7 +86,7 @@ class StartScreen():
         btn_start_game = ctk.CTkButton(
             master=self.start, 
             text="Iniciar Jogo", 
-            command=iniciar_jogo
+            command=lambda: iniciar_jogo(diff)
         )
         btn_start_game.grid(
             row=3, 
