@@ -1,22 +1,29 @@
 import customtkinter as ctk
+import gen_sudoku as gsdk
+import main
 
 N = 9
 printedkey = None
+vidas = 3
 
 class game_screen():
     def __init__(self, tabuleiro, solucao):
         self.tabuleiro = tabuleiro
         self.solucao = solucao
         self.printedkey = None
+        self.entries = {}  
+        self.selected_cell = None
+        self.wrinote_mode = "Escrever"
 
         self.game = ctk.CTk()
         self.game.title("Sudoku - Jogo")
-        self.game.geometry("760x475")
+        self.game.geometry("760x500")
         self.game.resizable(False, False)
         self.game.grid_rowconfigure(0, weight=1)
         self.game.grid_columnconfigure(0, weight=1)
 
         self.construir_elementos()
+
 
     def construir_elementos(self):
         self.mainframe = ctk.CTkFrame(master=self.game, fg_color="transparent")
@@ -60,6 +67,11 @@ class game_screen():
             columnspan=2
         )
 
+    def on_entry_click(self, i, j):
+        """Callback quando uma entry é clicada"""
+        self.selected_cell = (i, j)
+        print(f"Célula selecionada: [{i}][{j}]")
+
     def forjar_tabuleiro(self, tabuleiro, solucao):
         tab_frame = ctk.CTkFrame(master=self.mainframe, fg_color="transparent")
         tab_frame.grid(
@@ -99,6 +111,17 @@ class game_screen():
                     font=("Arial", 20), 
                     justify="center"
                 )
+                entry.bind(
+                    "<FocusIn>", 
+                    lambda event, 
+                    row=i, 
+                    col=j: 
+                    self.on_entry_click(
+                        row, 
+                        col
+                    )
+                )
+                self.entries[(i, j)] = entry
                 if cell_value != 0:
                     entry.insert(0, str(cell_value))
                     entry.configure(state="disabled")
@@ -110,25 +133,29 @@ class game_screen():
                 )
 
     def forjar_teclado(self):
-        wrinote_seg = ctk.CTkSegmentedButton(
+        self.wrinote_seg = ctk.CTkSegmentedButton(
             master=self.keynbtnsframe,
             values=["Escrever", "Anotar"],
             width=200,
             height=40,
-            font=("Arial", 14)
+            font=("Arial", 14),
+            command=lambda value: seg_callback(value)
         )
-        wrinote_seg.set("Escrever")
-        wrinote_seg.grid(
+        self.wrinote_seg.set("Escrever")
+        self.wrinote_seg.grid(
             row=0, 
             column=0,
             pady=(20),
             padx=(40, 20),
-            sticky="we"
-            
+            sticky="we" 
         )
+        
+        def seg_callback(value):
+            self.wrinote_mode = value
+            print(f"Modo alterado para: {self.wrinote_mode}")
 
-        teclado_frame = ctk.CTkFrame(master=self.keynbtnsframe, fg_color="transparent")
-        teclado_frame.grid(
+        self.teclado_frame = ctk.CTkFrame(master=self.keynbtnsframe, fg_color="transparent")
+        self.teclado_frame.grid(
             row=1, 
             column=0, 
             padx=(20, 0),
@@ -146,13 +173,14 @@ class game_screen():
                 row = 2
                 column = i - 7
             btn = ctk.CTkButton(
-                master=teclado_frame, 
+                master=self.teclado_frame, 
                 text=str(i), 
                 width=60, 
                 height=60, 
                 font=("Arial", 16),
-                command=lambda x=i: self.set_key(x)
+                command=lambda x=i: self.btn_press(x)
             )
+            
             btn.grid(row=row, column=column, padx=5, pady=5)
 
     def forjar_btns(self):
@@ -164,13 +192,26 @@ class game_screen():
             padx=(40, 20),
             sticky=""
         )
+        self.liveslbl = ctk.CTkLabel(
+            master=btnframe,
+            text=f"Vidas: {vidas}",
+            font=("Arial", 16)
+        )
+        self.liveslbl.grid(
+            row=0,
+            column=0,
+            columnspan=2,
+            padx=5,
+            pady=1
+        )
         showsol = ctk.CTkButton(
             master=btnframe,
             text="Mostrar Solução",
-            font=("Arial", 16)
+            font=("Arial", 16),
+            command=self.show_solution
         )
         showsol.grid(
-            row=0,
+            row=1,
             column=0,
             padx=5,
             pady=5
@@ -178,14 +219,16 @@ class game_screen():
         newgme = ctk.CTkButton(
             master=btnframe,
             text="Novo Jogo",
-            font=("Arial", 16)
+            font=("Arial", 16),
+            command=self.new_game_callback
         )
         newgme.grid(
-            row=0,
+            row=1,
             column=1,
             padx=5,
             pady=5
         )
+
         closegame = ctk.CTkButton(
             master=btnframe,
             text="Fechar Jogo",
@@ -193,16 +236,66 @@ class game_screen():
             command=self.game.destroy
         )
         closegame.grid(
-            row=1,
+            row=2,
             column=0,
             columnspan=2,
             padx=5,
             pady=5
         )
 
-    def set_key(self, value):
+
+    def new_game_callback(self):
+        self.game.destroy()
+        main.app = main.StartScreen()
+        main.app.start.mainloop()
+
+    def btn_press(self, value):
+        global vidas
         self.printedkey = value
         print(f"Tecla pressionada: {self.printedkey}")
+        
+        if self.selected_cell:
+            i, j = self.selected_cell
+            entry = self.entries[(i, j)]
+            
+            if entry.cget("state") != "disabled":
+                entry.delete(0, "end")
+                entry.insert(0, str(value))
+                if self.wrinote_mode == "Escrever":
+                    if value == self.solucao[i][j]:
+                        self.tabuleiro[i][j] = value
+                        entry.configure(state="disabled")
+                    else: 
+                        vidas -= 1
+                        self.liveslbl.configure(text=f"Vidas: {vidas}")
+                        print(f"Valor incorreto! Vidas restantes: {vidas}")
+                        entry.delete(0, "end")
+                        if vidas == 0:
+                            print("Game Over!")
+                            self.teclado_frame.destroy()
+                            self.wrinote_seg.destroy()
+                            lbl_game_over = ctk.CTkLabel(
+                                master=self.keynbtnsframe, 
+                                text="Game over!\nSelecione uma das opções abaixo:", 
+                                font=("Arial", 20)
+                            )
+                            self.liveslbl.configure(text=f"Vidas: {vidas}")
+                            lbl_game_over.grid(row=1, column=0, pady=(20, 0))
+                else:
+                    print(f"Modo Anotar: Valor {value} anotado em [{i}][{j}]")
+            else:
+                print(f"A célula [{i}][{j}] está bloqueada e não pode ser modificada.")
+        else:
+            print("Nenhuma célula selecionada")
+    
+    def show_solution(self):
+        for i in range(N):
+            for j in range(N):
+                entry = self.entries[(i, j)]
+                entry.delete(0, "end")
+                entry.insert(0, str(self.solucao[i][j]))
+                entry.configure(state="disabled")
+        
 """
 if __name__ == "__main__":
     app = game_screen([[0]*9 for _ in range(9)], [[0]*9 for _ in range(9)])
