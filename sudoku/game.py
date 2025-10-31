@@ -4,16 +4,17 @@ import main
 
 N = 9
 printedkey = None
-vidas = 3
 
 class game_screen():
     def __init__(self, tabuleiro, solucao):
+        self.vidas = 3
         self.tabuleiro = tabuleiro
         self.solucao = solucao
         self.printedkey = None
         self.entries = {}  
         self.selected_cell = None
         self.wrinote_mode = "Escrever"
+
 
         self.game = ctk.CTk()
         self.game.title("Sudoku - Jogo")
@@ -194,7 +195,7 @@ class game_screen():
         )
         self.liveslbl = ctk.CTkLabel(
             master=btnframe,
-            text=f"Vidas: {vidas}",
+            text=f"Vidas: {self.vidas}",
             font=("Arial", 16)
         )
         self.liveslbl.grid(
@@ -250,7 +251,6 @@ class game_screen():
         main.app.start.mainloop()
 
     def btn_press(self, value):
-        global vidas
         self.printedkey = value
         print(f"Tecla pressionada: {self.printedkey}")
         
@@ -266,11 +266,11 @@ class game_screen():
                         self.tabuleiro[i][j] = value
                         entry.configure(state="disabled")
                     else: 
-                        vidas -= 1
-                        self.liveslbl.configure(text=f"Vidas: {vidas}")
-                        print(f"Valor incorreto! Vidas restantes: {vidas}")
+                        self.vidas -= 1
+                        self.liveslbl.configure(text=f"Vidas: {self.vidas}")
+                        print(f"Valor incorreto! self.vidas restantes: {self.vidas}")
                         entry.delete(0, "end")
-                        if vidas == 0:
+                        if self.vidas == 0:
                             print("Game Over!")
                             self.teclado_frame.destroy()
                             self.wrinote_seg.destroy()
@@ -279,7 +279,7 @@ class game_screen():
                                 text="Game over!\nSelecione uma das opções abaixo:", 
                                 font=("Arial", 20)
                             )
-                            self.liveslbl.configure(text=f"Vidas: {vidas}")
+                            self.liveslbl.configure(text=f"Vidas: {self.vidas}")
                             lbl_game_over.grid(row=1, column=0, pady=(20, 0))
                 else:
                     print(f"Modo Anotar: Valor {value} anotado em [{i}][{j}]")
